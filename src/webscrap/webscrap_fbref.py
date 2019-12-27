@@ -7,6 +7,7 @@ import errno
 import pandas as pd
 import numpy as np
 import re
+from pymongo import MongoClient
 
 def find_match_report_paths(soup):
     '''
@@ -66,8 +67,8 @@ def procedure_to_retrieve_matchdata():
     #1. save score&fixture html file for season 2014/2015 - 2018/2019
     #   https://fbref.com/en/comps/9/1889/schedule/2018-2019-Premier-League-Fixtures    
     
-    #2. open the html file and load it to BeautifulSoup   
-    path = './data/html/2014-2015 Premier League Scores & Fixtures | FBref.com.html'
+    #2. open a html file and load it to BeautifulSoup   
+    path = './data/html/2018-2019 Premier League Scores & Fixtures | FBref.com.html'
     with open(path) as f:
         html_str = f.read()
     soup = BeautifulSoup(html_str, 'lxml')
@@ -99,9 +100,9 @@ def get_soup(path):
         html_str = f.read()
     return BeautifulSoup(html_str, 'lxml')
 
-def scrape_matchtable(soup):
+def scrape_fixture_html(soup):
     '''
-    build the matchtable list from Premier Score&Fixture.
+    build list of fixture from Premier Score&Fixture html.
 
     INPUT:
         - soup: BeautifulSoup object contains Premier Score&Fixture html
@@ -109,7 +110,7 @@ def scrape_matchtable(soup):
         - list of dictionary
     '''
     
-    tables = soup.find_all("table", id="sched_ks_1889_1")
+    tables = soup.find_all("table", class_="min_width sortable stats_table now_sortable")
     tbody = tables[0].find_all("tbody")
     trs = tbody[0].find_all("tr")
 
@@ -129,8 +130,8 @@ def scrape_matchtable(soup):
             dic_matchrow['time'] = tr.find_all("td", attrs={"data-stat": "time"})[0].text
             dic_matchrow['squad_a'] = tr.find_all("td", attrs={"data-stat": "squad_a"})[0].text
             dic_matchrow['squad_b'] = tr.find_all("td", attrs={"data-stat": "squad_b"})[0].text
-            dic_matchrow['xg_a'] = tr.find_all("td", attrs={"data-stat": "xg_a"})[0].text
-            dic_matchrow['xg_b'] = tr.find_all("td", attrs={"data-stat": "xg_b"})[0].text
+            #dic_matchrow['xg_a'] = tr.find_all("td", attrs={"data-stat": "xg_a"})[0].text
+            #dic_matchrow['xg_b'] = tr.find_all("td", attrs={"data-stat": "xg_b"})[0].text
 
             lst_score = tr.find_all("td", attrs={"data-stat": "score"})[0].text.split('–')
             dic_matchrow['goal_a'] = lst_score[0]
@@ -186,7 +187,6 @@ def scrap_matchreport(matchrow, save_dir):
 
     return (lst_squad_a, lst_squad_b)
 
-
 def get_player_minutes_for_match(lst_squad):
     '''
     extract {players: minutes} from match report for a team in the match
@@ -198,17 +198,89 @@ def get_player_minutes_for_match(lst_squad):
 
     return {elem["name"] : elem["minutes"] for elem in lst_squad}
 
+def scrap_matchreport_by_pandas(matchrow, save_dir):
+    '''
+    use pandas.read_html to retrieve two squad table
+    This dfs can be used for embedded table into mongo
+
+    INPUT:
+        - matchrow: dictionary of match
+        - save_dir: string for the location of match report htmls
+    OUTPUP:
+        - tuple of pandas dataframes for both team
+    '''
+    cur_path = '{}/{}.html'.format(save_dir, matchrow['datakey'])
+
+    with open(cur_path) as f:
+        html_str = f.read()
+
+
+    dfs = pd.read_html(html_str, attrs={'id': re.compile('^player_stats')})
+    if len(dfs) != 2:
+        raise ValueError("pandas read html return list of dataframes other than 2")
+    return tuple(dfs)
+
+def convert_list_fixture_to_dataframe(lst_fixture):
+    '''
+    convert datatypes in match dataframe
+    INPUT:
+        - lst_matchtable: list of dictionary for match table
+    OUTPUP:
+        - DataFrame: with appropriate datatypes
+    '''
+
+    df_fixture = pd.DataFrame(lst_fixture)
+    df_fixture = df_fixture.astype({'gameweek': np.int64,
+                            'goal_a': np.int64, 
+                            'goal_b': np.int64,
+                            #'xg_a': np.double,
+                            #'xg_b': np.double
+    })
+    df_fixture['date'] = pd.to_datetime(df_fixture['date'])
+    df_fixture['attendance'] = df_fixture.attendance.str.replace(',','').astype(np.int64)
+
+    return df_fixture
+
+def build_fixture_matchreport_directory(soup, save_dir):
+    '''
+    build directory for fixture embedding match report.
+    May be used for Mongo database
+
+    INPUT:
+        - soup: BeutifulSoup object for fixture&score html
+        - save_dir: string for match report directory
+    OUTPUP:
+        - list of dictionary
+    '''    
+    lst_fixture = scrape_fixture_html(soup)
+    df_fixture = convert_list_fixture_to_dataframe(lst_fixture)
+    lst_fixture = df_fixture.to_dict('records')
+    for match in lst_fixture:
+        squad_a, squad_b = scrap_matchreport_by_pandas(match, save_dir)
+        lst_squad_a = squad_a.to_dict('records')
+        lst_squad_b = squad_b.to_dict('records')
+        match['squad_a_report'] = lst_squad_a
+        match['squad_b_report'] = lst_squad_b
+    return lst_fixture
 
 if __name__=='__main__':
 
-    soup = get_soup('./data/html/2018-2019 Premier League Scores & Fixtures | FBref.com.html')
-    matchtable = scrape_matchtable(soup)
+    soup = get_soup('./data/html/2016-2017 Premier League Scores & Fixtures | FBref.com.html')
+    matchreport_dir = "./data/html/matchdata1617"
 
-    save_dir = "./data/html/matchdata1819"
+    
+    lst_fixture = build_fixture_matchreport_directory(soup, matchreport_dir)
+    
+    client = MongoClient('localhost', 27017)
+    db = client.premier_league
+    collection = db.fixture_2016
+    result = collection.insert_many(lst_fixture)
+    print(len(result.inserted_ids))
 
-    squad_a, squad_b = scrap_matchreport(matchtable[0], save_dir)
 
-    playerminutes = get_player_minutes_for_match(squad_a)
+
+    
+
 
 #matchtable[0]["squad_a_datakey"] = squad_a[0]["squad_datakey"]
 #matchtable[0]["squad_b_datakey"] = squad_b[0]["squad_datakey"]
