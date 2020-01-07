@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
 import os
 import pandas as pd
 import numpy as np
@@ -132,43 +135,58 @@ def save_notfound(lst_notfound, path = "./src/tool/notfound.csv"):
         - None
     '''
     with open(path, 'w') as f:
-        for name in dict_names
-            f.write(f"{name}\n")
+        for name in lst_notfound:
+            f.write(f"{name},100000.0\n")
 
     return None
+
+def load_notfound(path = "./src/tool/notfound.csv"):
+    '''
+    load notfound mapping into dictionary
+    INPUT:
+        - path: string
+    OUTPUT
+        - dictionary: {name: salary}
+    '''
+
+    dict_names = {}
+    with open(path, 'r') as f:
+        for line in f:
+            key, value = line.rstrip().split(',')
+            dict_names[key] = float(value)
+    return dict_names
 
 
 
 if __name__=='__main__':
+    pass
 
-    total_notfound = set()
-    dict_names = load_names()
+    # total_notfound = set()
+    # dict_names = load_names()
 
-    client = MongoClient('localhost', 27017)
-    db = client.premier_league
+    # client = MongoClient('localhost', 27017)
+    # db = client.premier_league
     
-    col_fixtures = [db.fixture_2018, db.fixture_2017, db.fixture_2016. db.fixture_2015. db.fixture_2014]
-    col_salaries = [db.salary_2018, db.salary_2017, db.salary_2016, db.salary_2015, db.salary_2014]
+    # col_fixtures = [db.fixture_2018, db.fixture_2017, db.fixture_2016. db.fixture_2015. db.fixture_2014]
+    # col_salaries = [db.salary_2018, db.salary_2017, db.salary_2016, db.salary_2015, db.salary_2014]
 
-    for col_fixture in col_fixtures:
-        lst_fixture = list(col_fixture.find({}, {'squad_a_report': 0, 'squad_b_report': 0}))
-        #df_fixture = pd.DataFrame(lst_fixture)
-        lst_names_fixture = fixture_player_names(lst_fixture, col_fixture)
-        lst_A_names = [lst_names_fixture[i][0] for i in range(len(lst_names_fixture))]
+    # for col_fixture in col_fixtures:
+    #     lst_fixture = list(col_fixture.find({}, {'squad_a_report': 0, 'squad_b_report': 0}))
+    #     #df_fixture = pd.DataFrame(lst_fixture)
+    #     lst_names_fixture = fixture_player_names(lst_fixture, col_fixture)
+    #     lst_A_names = [lst_names_fixture[i][0] for i in range(len(lst_names_fixture))]
 
-        for salary in col_salaries:
-            lst_salary = list(salary.find())
-            df_salary = pd.DataFrame(lst_salary)
-            lst_names_salary = salary_player_names(df_salary)
-            lst_B_names = [lst_names_salary[i][0] for i in range(len(lst_names_salary))]
+    #     for salary in col_salaries:
+    #         lst_salary = list(salary.find())
+    #         df_salary = pd.DataFrame(lst_salary)
+    #         lst_names_salary = salary_player_names(df_salary)
+    #         lst_B_names = [lst_names_salary[i][0] for i in range(len(lst_names_salary))]
 
-            #match_names_fixture_salary(lst_A_names, lst_B_names, dict_names)
-            match_names_fixture_salary_fuzzywuzzy(lst_A_names, lst_B_names, dict_names)
+    #         #match_names_fixture_salary(lst_A_names, lst_B_names, dict_names)
+    #         match_names_fixture_salary_fuzzywuzzy(lst_A_names, lst_B_names, dict_names)
         
-        notfound = set(lst_A_names) - set(dict_names.keys())
-        total_notfound = total_notfound.union(notfound)
+    #     notfound = set(lst_A_names) - set(dict_names.keys())
+    #     total_notfound = total_notfound.union(notfound)
     
-    save_names(dict_names)
-    save_notfound(total_notfound)
-    
-   
+    # save_names(dict_names)
+    # save_notfound(total_notfound)

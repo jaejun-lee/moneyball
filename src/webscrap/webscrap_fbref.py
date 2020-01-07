@@ -68,7 +68,7 @@ def procedure_to_retrieve_matchdata():
     #   https://fbref.com/en/comps/9/1889/schedule/2018-2019-Premier-League-Fixtures    
     
     #2. open a html file and load it to BeautifulSoup   
-    path = './data/html/2018-2019 Premier League Scores & Fixtures | FBref.com.html'
+    path = './data/html/2014-2015 Premier League Scores & Fixtures | FBref.com.html'
     with open(path) as f:
         html_str = f.read()
     soup = BeautifulSoup(html_str, 'lxml')
@@ -83,7 +83,7 @@ def procedure_to_retrieve_matchdata():
     
     #5. retrieve all matchdata html and save to matchdata{year} directory.
     # 
-    save_html_from_paths(dic_urls, './data/html/matchdata1819')
+    save_html_from_paths(dic_urls, './data/html/matchdata1415')
 
     #6. 'ls | wc' in the directory to count total html files. 380
 
@@ -210,7 +210,6 @@ def scrap_matchreport_by_pandas(matchrow, save_dir):
         - tuple of pandas dataframes for both team
     '''
     cur_path = '{}/{}.html'.format(save_dir, matchrow['datakey'])
-
     with open(cur_path) as f:
         html_str = f.read()
 
@@ -263,19 +262,27 @@ def build_fixture_matchreport_directory(soup, save_dir):
         match['squad_b_report'] = lst_squad_b
     return lst_fixture
 
-if __name__=='__main__':
+def procedure_to_dump_fixturedata_to_mongo():
 
-    soup = get_soup('./data/html/2016-2017 Premier League Scores & Fixtures | FBref.com.html')
-    matchreport_dir = "./data/html/matchdata1617"
+    #1. load scores and fixture html
+    soup = get_soup('./data/html/2014-2015 Premier League Scores & Fixtures | FBref.com.html')
+    matchreport_dir = "./data/html/matchdata1415"
 
-    
+    #2. build list of dictionary data structure for mongo
     lst_fixture = build_fixture_matchreport_directory(soup, matchreport_dir)
     
+    #3. open connection and insert the list
     client = MongoClient('localhost', 27017)
     db = client.premier_league
-    collection = db.fixture_2016
+    collection = db.fixture_2014
     result = collection.insert_many(lst_fixture)
     print(len(result.inserted_ids))
+
+
+if __name__=='__main__':
+
+    #procedure_to_retrieve_matchdata()
+    procedure_to_dump_fixturedata_to_mongo()
 
 
 
