@@ -33,6 +33,7 @@ def scrape_salary_html(soup):
     '''
 
     table = soup.find_all('table', class_="datatable noborder tablesorter tablesorter-default")[0]
+    
     trs = table.tbody.find_all('tr')
     lst_players = []
     for tr in trs:
@@ -75,8 +76,8 @@ def scrape_transfer_html(soup):
 if __name__=='__main__':
 
      #1. scrape salary and transfer htmls
-    soup_salary = get_soup("./data/html/salary/EPL_Salary_Rankings_Spotrac_20182019.html")
-    soup_transfer = get_soup("./data/html/salary/EPL_Transfer_Rankings_Spotrac_20182019.html")
+    soup_salary = get_soup("./data/html/salary/EPL_Salary_Rankings_Spotrac_20192020.html")
+    soup_transfer = get_soup("./data/html/salary/EPL_Transfer_Rankings_Spotrac_20192020.html")
     salaries = scrape_salary_html(soup_salary)
     transfers = scrape_transfer_html(soup_transfer)
 
@@ -86,14 +87,11 @@ if __name__=='__main__':
     df = pd.merge(left=df_salaries, right=df_transfers, on=['name', 'position'], how='outer')
     lst = df.to_dict('records')
     
-    # #3. open connection and insert the list
-    # client = MongoClient('localhost', 27017)
-    # db = client.premier_league
-    # collection = db.salary_2014
-    # result = collection.insert_many(lst)
-    # print(len(result.inserted_ids))
-
-    
-    
+    #3. open connection and insert the list
+    client = MongoClient('localhost', 27017)
+    db = client.premier_league
+    collection = db.salary_2019
+    result = collection.insert_many(lst)
+    print(len(result.inserted_ids))
     
 
