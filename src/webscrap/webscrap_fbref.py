@@ -59,33 +59,7 @@ def save_html_from_paths(paths, save_dir):
         else:
             pass
 
-def procedure_to_retrieve_matchdata():
-    '''
-    explain procedure to retrieve all matchdata
-    for each game in premier league from 2014 - 2019
-    '''
-    #1. save score&fixture html file for season 2014/2015 - 2018/2019
-    #   https://fbref.com/en/comps/9/1889/schedule/2018-2019-Premier-League-Fixtures    
-    
-    #2. open a html file and load it to BeautifulSoup   
-    path = './data/html/2014-2015 Premier League Scores & Fixtures | FBref.com.html'
-    with open(path) as f:
-        html_str = f.read()
-    soup = BeautifulSoup(html_str, 'lxml')
-    
-    #3. find all url paths to match data and pair with keycode
-    #   This site use unique keycode for each html/data
-    dic_urls = find_match_report_paths(soup)
 
-
-    #4. check number of dictionary. There are total 380 games each year.
-    print(dic_urls, len(dic_urls))
-    
-    #5. retrieve all matchdata html and save to matchdata{year} directory.
-    # 
-    save_html_from_paths(dic_urls, './data/html/matchdata1415')
-
-    #6. 'ls | wc' in the directory to count total html files. 380
 
 
 def get_soup(path):
@@ -262,6 +236,35 @@ def build_fixture_matchreport_directory(soup, save_dir):
         match['squad_b_report'] = lst_squad_b
     return lst_fixture
 
+
+def procedure_to_retrieve_matchdata():
+    '''
+    explain procedure to retrieve all matchdata
+    for each game in premier league from 2014 - 2019
+    '''
+    #1. save score&fixture html file for season 2014/2015 - 2018/2019
+    #   https://fbref.com/en/comps/9/1889/schedule/2018-2019-Premier-League-Fixtures    
+    
+    #2. open a html file and load it to BeautifulSoup   
+    path = './data/html/2014-2015 Premier League Scores & Fixtures | FBref.com.html'
+    with open(path) as f:
+        html_str = f.read()
+    soup = BeautifulSoup(html_str, 'lxml')
+    
+    #3. find all url paths to match data and pair with keycode
+    #   This site use unique keycode for each html/data
+    dic_urls = find_match_report_paths(soup)
+
+
+    #4. check number of dictionary. There are total 380 games each year.
+    print(dic_urls, len(dic_urls))
+    
+    #5. retrieve all matchdata html and save to matchdata{year} directory.
+    # 
+    save_html_from_paths(dic_urls, './data/html/matchdata1415')
+
+    #6. 'ls | wc' in the directory to count total html files. 380
+
 def procedure_to_dump_fixturedata_to_mongo():
 
     #1. load scores and fixture html
@@ -282,7 +285,7 @@ def procedure_to_dump_fixturedata_to_mongo():
 if __name__=='__main__':
 
     #procedure_to_retrieve_matchdata()
-    procedure_to_dump_fixturedata_to_mongo()
+    #procedure_to_dump_fixturedata_to_mongo()
 
 
 

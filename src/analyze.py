@@ -41,6 +41,15 @@ def f_point_squad_b(row):
     return val
 
 def populate_column(df):
+    '''
+    generate columns to be analized based on the initial columns    
+    
+    INPUT:
+        df: DataFrame
+       
+    OUTPUT
+        DataFrame
+    '''
     #win, loss, draw
     df['a_win'] = df.goal_a > df.goal_b
     df['b_win'] = df.goal_a < df.goal_b
@@ -63,6 +72,15 @@ def populate_column(df):
 
 
 def fold_df(df):
+    '''
+    For team analysis, concat home team and away team  
+    
+    INPUT:
+        df: DataFrame
+    
+    OUTPUT
+        DataFrame
+    '''
 
     df_a = df[["date", "squad_a", "squad_a_salary", "a_salary_delta",  "goal_a", "goal_b", "a_goal_delta", "a_point", 'season']]
     df_b = df[["date", "squad_b", "squad_b_salary", "b_salary_delta",  "goal_b", "goal_a", "b_goal_delta", "b_point", 'season']]
@@ -73,11 +91,17 @@ def fold_df(df):
     df_a['home'] = True
     df_b['home'] = False
 
-    return df_a.append(df_b)
-
+    return pd.concat([df_a, df_b])
 
 
 def groupby_team(df):
+    '''
+    INPUT:
+        df: DataFrame
+       
+    OUTPUT
+        DataFrame
+    '''
 
     df_team = df.groupby("squad").agg(
         mean_salary=pd.NamedAgg(column='salary', aggfunc=np.mean),
@@ -91,7 +115,14 @@ def groupby_team(df):
     return df_team
 
 def correlation_salary_point(season, df):
-
+    '''    
+    INPUT:
+        season: string
+        df: DataFrame
+       
+    OUTPUT
+        None
+    '''
     with sns.axes_style('white'):
         plot = sns.jointplot("mean_salary", "total_point", df, kind='reg')
         plot.savefig(f"../images/pairplot_team_salary_point_season_{season}")
@@ -100,7 +131,14 @@ def correlation_salary_point(season, df):
     print(f"for the season '{season}', The correlation between Average Salary and Total Point earned is {corr_val:0.2f}")
 
 def correlation_salary_goal(season, df):
-    
+    '''    
+    INPUT:
+        season: string
+        df: DataFrame
+       
+    OUTPUT
+        None
+    '''
     with sns.axes_style('white'):
         plot = sns.jointplot("mean_salary", "mean_goal_delta", df, kind='reg')
         plot.savefig(f"../images/pairplot_team_salary_goal_delta_season_{season}")
@@ -109,7 +147,14 @@ def correlation_salary_goal(season, df):
     print(f"for the season '{season}', The correlation between Average Salary and Average Goal Delta is {corr_val:0.2f}")
 
 def display_top_5_salary(season, df):
-
+    '''    
+    INPUT:
+        season: string
+        df: DataFrame
+       
+    OUTPUT
+        None
+    '''
     df_sorted = df.sort_values(by="mean_salary", ascending=False)
     print(df_sorted[['mean_salary', 'mean_goal_delta', 'total_point']].head(5))
 
@@ -120,7 +165,14 @@ def display_top_5_salary(season, df):
     fig.savefig(f"../images/Bar_the_top5_team_salary_{season}")
 
 def display_top_5_point(season, df):
-
+    '''    
+    INPUT:
+        season: string
+        df: DataFrame
+       
+    OUTPUT
+        None
+    '''
     df_sorted = df.sort_values(by="total_point", ascending=False)
     print(df_sorted[['mean_salary', 'mean_goal_delta', 'total_point']].head(5))
 
@@ -131,6 +183,11 @@ def display_top_5_point(season, df):
     fig.savefig(f"../images/Bar_the_top5_team_point_{season}")
 
 def analyze_by_team(df):
+    '''
+    Analyze teams performance for each season based on the team salary.
+    INPUT:
+        - df: DataFrame
+    '''
 
     groupd = df.groupby("season")
     df_2018 = groupd.get_group("2018_2019")
@@ -274,35 +331,30 @@ def get_series_error(a, a_hat, b, b_hat):
     sr_SE = ((a - b) - (a_hat - b_hat))**2
     
     return sr_SE
-
-
-
     
 if __name__=='__main__':
 
     #df = fixturedata.build_fixture_dataframe("2018")
     df = pd.read_pickle('../data/fixture.pkl')
-
     df = populate_column(df)
-
-    #for analyze
-    groupd = df.groupby('season')
-    df_2018 = groupd.get_group("2018_2019")
-    df_2017 = groupd.get_group("2017_2018")
-    folded = fold_df(df)
 
     #First, teams performance for overall season based on salary.
     df_team = analyze_by_team(df)
 
     #Second, how the team salary affect the peformance in each match.
-    # analyze_salary_delta_with_goal_delta(df)
-    # analyze_salary_delta_with_point(df)
+    analyze_salary_delta_with_goal_delta(df)
+    analyze_salary_delta_with_point(df)
     
     #Goal Prediction Analyze
-    # pr_a = predict_goal(df, ['a_salary_delta'], 'goal_a')
-    # pr_b = predict_goal(df, ['b_salary_delta'], 'goal_b')
-    # df_2018['pr_a'] = pd.Series(pr_a, index=df_2018.index)
-    # df_2018['pr_b'] = pd.Series(pr_b, index=df_2018.index)
+    pr_a = predict_goal(df, ['a_salary_delta'], 'goal_a')
+    pr_b = predict_goal(df, ['b_salary_delta'], 'goal_b')
+    df_2018['pr_a'] = pd.Series(pr_a, index=df_2018.index)
+    df_2018['pr_b'] = pd.Series(pr_b, index=df_2018.index)
+    analyze_goal_prediction(df_2018)
 
-    #analyze_goal_prediction(df_2018)
 
+    # #for Debug
+    # groupd = df.groupby('season')
+    # df_2018 = groupd.get_group("2018_2019")
+    # df_2017 = groupd.get_group("2017_2018")
+    # folded = fold_df(df)

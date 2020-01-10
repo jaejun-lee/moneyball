@@ -159,7 +159,6 @@ def load_notfound(path = "./src/tool/notfound.csv"):
 
 
 if __name__=='__main__':
-    pass
 
     total_notfound = set()
     dict_names = {}
