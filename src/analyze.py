@@ -20,6 +20,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 
+from scipy import stats
+
 
 
 def f_point_squad_a(row):
@@ -308,6 +310,15 @@ def predict_goal(df, X, y):
     return y_hat.flatten()
 
 def analyze_goal_prediction(df):
+    '''
+    compare error distribution between statsbomb and salary_delta prediction
+    
+    INPUT:
+        df: DataFrame
+        
+    OUTPUT
+        tuple(square error distribution of statsbomb, square error distribution of salary_delta)
+    '''
 
     sr_xg_err = get_series_error(df.goal_a, df.xg_a, df.goal_b, df.xg_b)
     sr_pr_err = get_series_error(df.goal_a, df.pr_a, df.goal_b, df.pr_b)
@@ -319,12 +330,50 @@ def analyze_goal_prediction(df):
     ax.set_xlabel('Error')
     ax.set_ylabel('Error Density')
     ax.figure.savefig('../images/error_distribution_comparision.png')
+    plt.cla()
+
 
     print(sr_xg_err.describe())
     print(sr_pr_err.describe())
     print(np.sqrt(sr_xg_err.mean()))
     print(np.sqrt(sr_pr_err.mean()))
 
+    return (sr_xg_err, sr_pr_err)
+
+def analyze_error_distribution(a, b):
+    '''
+    Ananlyze more about error distribution:    
+    INPUT:
+        a: series of statsbomn error
+        b: series of salary delta error
+        
+    OUTPUT
+    '''
+    c = np.sqrt((a - b).abs())
+
+    ax = c.plot.kde()
+    ax.legend(['Difference Squrerooted'])
+    ax.figure.suptitle("Difference Distribution", fontsize = 24)
+    ax.set_xlabel('Error Difference')
+    ax.set_ylabel('Probability Density')
+    ax.figure.savefig('../images/error_difference_distribution.png')
+
+    c = c.to_numpy()
+
+    mu = c.mean()
+    sigma = c.std()
+    count = c.size
+
+    ci_skew = stats.skewnorm.interval(0.95, stats.skew(c), loc=mu, scale=sigma)
+    ci_norm = stats.norm.interval(0.95, loc=mu, scale=sigma)
+
+    ci_95_high = mu + 1.96*sigma/math.sqrt(count)
+    ci_95_low = mu - 1.96*sigma/math.sqrt(count)
+
+    print((mu, sigma, count))
+    print(ci_skew)
+    print(ci_norm)
+    print((ci_95_high, ci_95_low))
 
 def get_series_error(a, a_hat, b, b_hat):
     
@@ -334,11 +383,13 @@ def get_series_error(a, a_hat, b, b_hat):
     
 if __name__=='__main__':
 
-    #df = fixturedata.build_fixture_dataframe("2018")
+    # #df = fixturedata.build_fixture_dataframe("2018")
     df = pd.read_pickle('../data/fixture.pkl')
     df = populate_column(df)
 
-    #First, teams performance for overall season based on salary.
+    
+
+    # #First, teams performance for overall season based on salary.
     df_team = analyze_by_team(df)
 
     #Second, how the team salary affect the peformance in each match.
@@ -346,12 +397,16 @@ if __name__=='__main__':
     analyze_salary_delta_with_point(df)
     
     #Goal Prediction Analyze
+    groupd = df.groupby('season')
+    df_2018 = groupd.get_group("2018_2019")
     pr_a = predict_goal(df, ['a_salary_delta'], 'goal_a')
     pr_b = predict_goal(df, ['b_salary_delta'], 'goal_b')
     df_2018['pr_a'] = pd.Series(pr_a, index=df_2018.index)
     df_2018['pr_b'] = pd.Series(pr_b, index=df_2018.index)
-    analyze_goal_prediction(df_2018)
+    a_err, b_err = analyze_goal_prediction(df_2018)
 
+    #Do more analyze on the error
+    analyze_error_distribution(a_err, b_err)
 
     # #for Debug
     # groupd = df.groupby('season')
