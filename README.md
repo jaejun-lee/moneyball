@@ -1,5 +1,5 @@
 
-# Will More Spending money guarantee winning in Premier League Soccer League.
+# Will Spending more money guarantees the performance in English Premier League.
 
 *Capstone I Project for Galvanize Data Science Immersive, Week 4*
 
@@ -15,10 +15,10 @@ Since Machester City, a English Premier League team, had been bought by Mansour 
 > Premier League Wages Are A Disgrace -- Except When Your Team's Winning  - Bobby McMahon, Forbes
 
 ### Goal
-There has been several statistical analysis between the team spending on salaries&transfers and it's performance in the league. In advance, I got more interested in the team's acquired point and goal for each match compared with the average salary of players actually involved in the match and like to establish the prediction of goals based on the feature.
+There has been several statistical analysis between the team spending on salaries & transfers and it's performance in the league. In advance, I am more interested in the team's peformance for each match compared with the average salary of players actually involved for the game. Then, I will try to evaluate the performance of the prediction only based on the feature, Salary Delta. 
 
 ## Data and Source
-Data in Subject be loaed into pandas DataFrame initially with the following columns in interests.
+Data in subject be loaed into pandas DataFrame initially with the following columns in interests.
 Each row represent a game match in the premiere league fixture of each season. The data contanins 380 matchs x 4 seasons.
 
 |Column    |Description
@@ -40,8 +40,10 @@ Each row represent a game match in the premiere league fixture of each season. T
 * https://fbref.com/en/comps/9/1889/schedule/2018-2019-Premier-League-Fixtures provide Premier League fixture & score data including player roll for each match. Webscrapping. 
 
 ## Exploratory Data Analysis
-### First, teams performance for overall season based on salary.
+### First, the team's performance for the overall season based on the salary.
 
+
+There is strong correlation between the average team salary and the performance of team represented in the total acquired points, For each game, the team acquire 3 points for winning, 1 point for drawing, and 0 point for loss. There is 38 matches for each team in the season. 
 #### The correlation of the average team salary and the total point per each season.
 |Season    |Correlation Value
 |---    |---
@@ -50,6 +52,7 @@ Each row represent a game match in the premiere league fixture of each season. T
 |2017_2018  |0.83
 |2016_2017  |0.77
 |2015_2016  |0.57
+
 
 #### The correlation of the average team salary and the average goal advantages for each game per season.
 |Season    |Correlation Value
@@ -60,28 +63,32 @@ Each row represent a game match in the premiere league fixture of each season. T
 |2016_2017  |0.76
 |2015_2016  |0.66
 
-As I expected there is strong correlation between the average team salary and the performance of team, the following scatter and regression plot also show the strong trends. 
 
+The following scatter and regression plots also show the strong trends. 
 #### Pair Plot between the team average salary and the total point for all 4 seasons. 
 <p align="center">
   <img src="images/pairplot_team_salary_point_season_all.png" width = 400>
 </p>
 
-However, the correlation value from the season 2015-2016 is outlier from other season. The reason would be distrupted winning result of Leister City. Liester City finished top of season 2015-2106 with finance in budget. 
-The average salary deployed in each game is 3.37 million pounds(7th), but acquired 81 points in total for the season.
+
+However, the correlation value from the season 2015-2016 is a outlier from other seasons. The reason could be a distrupted winning result of an underdog, Leister City. Liester City finished top of season 2015-2106 with finance in budget. 
+The average salary deployed in each game is 3.37 million pounds(7th), but acquired 81 points in total for the season. There are also noticeable misalignement from Tottenham and Chealsea in the season.
 
 #### The top five team in the average salary in the season 2015-2016
 <p align="center">
   <img src="images/Bar_the_top5_team_salary_2015_2016.png">
 </p>
 
+
 #### The top five team in the total point in the season 2015-2016
 <p align="center">
-  <img src="images/Bar_the_top5_point_2015_2016.png">
+  <img src="images/Bar_the_top5_team_point_2015_2016.png">
 </p>
 
-#### The table show top 7 in team salary.
-|Squad  |mean_salary(in Mlb)    |total_point    |Rank
+
+#### The table show the top 7 teams in the average salary in the season 2015-2016
+
+|Squad  |average salary(in millions pounds)    |total point    |Rank
 |---    |---    |---    |---
 |Manchester City  |7.02      |66    |5
 |Manchester Utd   |6.05      |66    |4
@@ -90,6 +97,8 @@ The average salary deployed in each game is 3.37 million pounds(7th), but acquir
 |Liverpool        |3.80      |60    |8
 |Tottenham        |3.43      |70    |3
 |Leicester City   |3.37      |81    |1
+
+
 
 ### Second, how the team salary affect the peformance in each match.
 
@@ -108,16 +117,25 @@ Test Data is the match data from the seaon 2018-2019.
 
 I applied the training of data separately for Home team and Away team to predict the goal, because there is home advantage in the match.
 
-#### Root Mean Square Error 
+#### Root Mean Square Error for goal predition
 |Side |Salary Delta | Statsbomb
 |---    |---    |---
 |Home   |1.48   |1.14
 |Away   |1.20   |0.96
 
-#### Error Distribution shows Statsboms has mean 0.90 and std 0.49, Salary Delta has 1.02 and 0.55. 
+
+#### The following plot shows the distribution of the squared error for the goal delta prediction.
 <p align="center">
-  <img src="images/RMSE_distribution_comparison.png">
+  <img src="images/error_distribution_comparision.png">
 </p>
+
+
+#### Both prediction yield similiar squared error distribution. RMSE are also close. RMSE for goal delta prediction
+|Salary Delta | Statsbomb
+|---    |---
+|1.68   |1.46
+
+
 
 ## Conclusion
 Even though the correlation between the team salary and the performance in each match is not strong enough to assert, the salary may be the most significant feature to predict the outcome of the game. We could produce a decent prediction model only depends on the salary after all. And, we also could see that it is strongly correlated with overall teams performance in the season also.  

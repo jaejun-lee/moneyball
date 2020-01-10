@@ -115,7 +115,20 @@ def display_top_5_salary(season, df):
 
     ax = df_sorted.head(5).plot.barh(y="mean_salary")
     fig = ax.figure
+    fig.set_size_inches(8, 5)
+    fig.tight_layout(pad=1)
     fig.savefig(f"../images/Bar_the_top5_team_salary_{season}")
+
+def display_top_5_point(season, df):
+
+    df_sorted = df.sort_values(by="total_point", ascending=False)
+    print(df_sorted[['mean_salary', 'mean_goal_delta', 'total_point']].head(5))
+
+    ax = df_sorted.head(5).plot.barh(y="total_point")
+    fig = ax.figure
+    fig.set_size_inches(8, 5)
+    fig.tight_layout(pad=1)
+    fig.savefig(f"../images/Bar_the_top5_team_point_{season}")
 
 def analyze_by_team(df):
 
@@ -141,29 +154,27 @@ def analyze_by_team(df):
     
     for key, value in dict_df.items():
         display_top_5_salary(key, value)
+    
+    for key, value in dict_df.items():
+        display_top_5_point(key, value)
 
     analyze_by_team_season_2015(dict_df["2015_2016"])
 
-    return dict_df["2015_2016"]
+    return dict_df["all"]
 
 def analyze_by_team_season_2015(df):
-
-    df_sorted = df.sort_values(by="total_point", ascending=False)
-    print(df_sorted[['mean_salary', 'mean_goal_delta', 'total_point']].head(5))
-
-    ax = df_sorted.head(5).plot.barh(y="total_point")
-    fig = ax.figure
-    fig.savefig(f"../images/Bar_the_top5_point_2015_2016")
+    pass
 
 
 def analyze_salary_delta_with_goal_delta(df):
     '''
-    We have to compare only half side of df
-
     INPUT:
         - df: DataFrame
     '''
+    #analyze only home side, otherwise, it is duplicate
     df = fold_df(df).groupby('home').get_group(True)
+    df['salary_delta'] = df['salary_delta'] - 1000
+
     ax = df.boxplot(column='salary_delta', by="goal_delta", vert=False)
     ax.set_title('Distribution of Salary Delta per Goal Delta')
     ax.set_xlabel('Salary Delta')
@@ -188,6 +199,7 @@ def analyze_salary_delta_with_point(df):
         - df: DataFrame
     '''
     df = fold_df(df)
+    df['salary_delta'] = df['salary_delta'] - 1000
     ax = df.boxplot(column='salary_delta', by="point", vert=False)
     ax.set_title('Distribution of Salary Delta per Point')
     ax.set_xlabel('Salary Delta')
@@ -218,9 +230,8 @@ def predict_goal(df, X, y):
         numpy.ndarray: prediction
     '''
     grouped = df.groupby('season')
-    groups = ['2017_2018', '2016_2017', '2015_2016']    
+    groups = ['2015_2016','2016_2017', '2017_2018']    
     train = pd.concat([grouped.get_group(name) for name in groups])
-    #train = grouped.get_group('2017_2018')
     test = grouped.get_group('2018_2019')
 
     X_train = train[X]
@@ -239,18 +250,33 @@ def predict_goal(df, X, y):
 
     return y_hat.flatten()
 
-def analyze_goal_prediction(a, a_hat, b, b_hat):
+def analyze_goal_prediction(df):
 
-    sr_MSE = ((a - a_hat)**2 + (b - b_hat)**2)/2 
-    sr_RMSE = np.sqrt(sr_MSE)
+    sr_xg_err = get_series_error(df.goal_a, df.xg_a, df.goal_b, df.xg_b)
+    sr_pr_err = get_series_error(df.goal_a, df.pr_a, df.goal_b, df.pr_b)
     
-    plot = sns.kdeplot(sr_RMSE, color='b', shade=True, Label="RMSE Distribution")
-    plt.xlabel('RMSE')
-    plt.ylabel('Error Density')
+    ax = sns.kdeplot(sr_xg_err, color='b', shade=True, legend=True)
+    ax = sns.kdeplot(sr_pr_err, color='r', shade=True, legend=True)
+    ax.legend(['StatsBomb', 'Salary Only'])
+    ax.figure.suptitle("Error Distribution Comparison", fontsize = 24)
+    ax.set_xlabel('Error')
+    ax.set_ylabel('Error Density')
+    ax.figure.savefig('../images/error_distribution_comparision.png')
 
-    print(sr_RMSE.describe())
+    print(sr_xg_err.describe())
+    print(sr_pr_err.describe())
+    print(np.sqrt(sr_xg_err.mean()))
+    print(np.sqrt(sr_pr_err.mean()))
 
-    return sr_RMSE.mean()
+
+def get_series_error(a, a_hat, b, b_hat):
+    
+    sr_SE = ((a - b) - (a_hat - b_hat))**2
+    
+    return sr_SE
+
+
+
     
 if __name__=='__main__':
 
@@ -266,21 +292,17 @@ if __name__=='__main__':
     folded = fold_df(df)
 
     #First, teams performance for overall season based on salary.
-    #df_team = analyze_by_team(df)
+    df_team = analyze_by_team(df)
 
     #Second, how the team salary affect the peformance in each match.
     # analyze_salary_delta_with_goal_delta(df)
     # analyze_salary_delta_with_point(df)
     
     #Goal Prediction Analyze
-    pr_a = predict_goal(df, ['a_salary_delta'], 'goal_a')
-    pr_b = predict_goal(df, ['b_salary_delta'], 'goal_b')
+    # pr_a = predict_goal(df, ['a_salary_delta'], 'goal_a')
+    # pr_b = predict_goal(df, ['b_salary_delta'], 'goal_b')
+    # df_2018['pr_a'] = pd.Series(pr_a, index=df_2018.index)
+    # df_2018['pr_b'] = pd.Series(pr_b, index=df_2018.index)
 
-    df_2018['pr_a'] = pd.Series(pr_a, index=df_2018.index)
-    df_2018['pr_b'] = pd.Series(pr_b, index=df_2018.index)
-
-    RMSE_xg = analyze_goal_prediction(df_2018.goal_a, df_2018.xg_a, df_2018.goal_b, df_2018.xg_b)
-    print(RMSE_xg)
-    # RMSE_pr = analyze_goal_prediction(df_2018.goal_a, df_2018.pr_a, df_2018.goal_b, df_2018.pr_b)
-    # print(RMSE_pr)
+    #analyze_goal_prediction(df_2018)
 
