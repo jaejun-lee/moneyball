@@ -129,11 +129,26 @@ I applied the training of data separately for Home team and Away team to predict
   <img src="images/error_distribution_comparision.png">
 </p>
 
+Both prediction yield similiar squared error distribution and interestingly right skewed with long tails.
 
-#### Both prediction yield similiar squared error distribution. RMSE are also close. RMSE for goal delta prediction
+#### RMSE are also close. RMSE for goal delta prediction
 |Salary Delta | Statsbomb
 |---    |---
 |1.68   |1.46
+
+If we further try to compare the difference of the squared errors,
+#### Squared Error Difference Distribution. Square Error Difference
+<p align="center">
+  <img src="images/error_difference_distribution.png">
+</p>
+There is little bit skewed right, so I used skewed normal distribution to caculate confidence interval of 0.95. 
+
+#### stats for the difference distribution
+|Stats  |Salary Delta
+|---  |---
+|Mean |1.17
+|Std  |0.78
+|CI 0.95  |0.42, 2.92
 
 
 
